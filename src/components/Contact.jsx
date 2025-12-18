@@ -1,7 +1,46 @@
-import React from 'react';
+import React, { useState } from 'react';
+import supabase from '../utils/supabase';
 import './Contact.css';
 
 const Contact = () => {
+    const [formData, setFormData] = useState({
+        email: '',
+        description: ''
+    });
+    const [status, setStatus] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const handleChange = (e) => {
+        setFormData({
+            ...formData,
+            [e.target.name]: e.target.value
+        });
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setStatus('');
+
+        try {
+            const { error } = await supabase
+                .from('contacts')
+                .insert([
+                    { email: formData.email, description: formData.description }
+                ]);
+
+            if (error) throw error;
+
+            setStatus('success');
+            setFormData({ email: '', description: '' });
+        } catch (error) {
+            console.error('Error submitting form:', error);
+            setStatus('error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <section className="contact section" id="contact">
             <div className="container">
@@ -21,9 +60,35 @@ const Contact = () => {
                         </div>
                     </div>
                     <div className="contact-action">
-                        <a href="mailto:hello@example.com" className="btn-primary email-btn">
-                            Say Hello
-                        </a>
+                        <form className="contact-form" onSubmit={handleSubmit}>
+                            <div className="form-group">
+                                <input
+                                    type="email"
+                                    name="email"
+                                    placeholder="Your Email"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    required
+                                    className="form-input"
+                                />
+                            </div>
+                            <div className="form-group">
+                                <textarea
+                                    name="description"
+                                    placeholder="Description"
+                                    value={formData.description}
+                                    onChange={handleChange}
+                                    required
+                                    className="form-input form-textarea"
+                                    rows="4"
+                                ></textarea>
+                            </div>
+                            <button type="submit" className="btn-primary submit-btn" disabled={loading}>
+                                {loading ? 'Sending...' : 'Send Message'}
+                            </button>
+                            {status === 'success' && <p className="status-msg success">Message sent successfully!</p>}
+                            {status === 'error' && <p className="status-msg error">Failed to send message. Please try again.</p>}
+                        </form>
                     </div>
                 </div>
                 <footer className="footer">
